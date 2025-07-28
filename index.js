@@ -2,6 +2,10 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 
 dotenv.config();
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const API_KEY = process.env.API_KEY;
 const BASE_URL = "https://assessment.ksensetech.com/api";
@@ -83,7 +87,7 @@ function processPatients(patients) {
   const feverPatients = [];
   const dataIssues = [];
 
-  patients.forEach(p => {
+patients.forEach(p => {
     const bpScore = calculateBPScore(p.blood_pressure);
     const tempScore = calculateTempScore(p.temperature);
     const ageScore = calculateAgeScore(p.age);
