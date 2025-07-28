@@ -19,7 +19,7 @@ async function fetchPatients() {
 
   while (hasNext) {
     try {
-      const response = await fetch(\`\${BASE_URL}/patients?page=\${page}&limit=10\`, {
+      const response = await fetch(`${BASE_URL}/patients?page=${page}&limit=10`, {
         headers: { "x-api-key": API_KEY }
       });
 
