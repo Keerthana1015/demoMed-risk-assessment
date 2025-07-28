@@ -13,9 +13,11 @@ This project connects to the DemoMed Healthcare API to:
 - Implements all scoring rules as per assessment requirements
 - Outputs detailed submission response with scoring feedback
 
-## Setup Instructions
+## Setup
+1. Clone the repo
+2. Run `npm install`
+3. Create a `.env` file in the root folder and add:
+   API_KEY=your_api_key_here
+4. Run the script:
+   node index.js
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/Keerthana1015/demoMed-risk-assessment.git
-cd demoMed-risk-assessment
