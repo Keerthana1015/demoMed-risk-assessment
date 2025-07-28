@@ -1,21 +1,18 @@
-const fetch = require("node-fetch");
-require("dotenv").config();
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const API_KEY = process.env.API_KEY;
 const BASE_URL = "https://assessment.ksensetech.com/api";
-
-if (!API_KEY) {
-  console.error("ERROR: API_KEY not found. Please create a .env file with your API_KEY.");
-  process.exit(1);
-}
 
 // ----------------- FETCH PATIENT DATA -----------------
 async function fetchPatients() {
   let patients = [];
   let page = 1;
   let hasNext = true;
-  const maxRetries = 5;
   let retryCount = 0;
+  const MAX_RETRIES = 5;
 
   while (hasNext) {
     try {
@@ -29,18 +26,20 @@ async function fetchPatients() {
         continue;
       }
 
-      if (!response.ok) throw new Error(\`HTTP error: \${response.status}\`);
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
 
       const data = await response.json();
+      if (!data.data || !Array.isArray(data.data)) throw new Error("Invalid data structure");
+
       patients.push(...data.data);
       hasNext = data.pagination.hasNext;
       page++;
-      retryCount = 0; // reset retry count on success
+      retryCount = 0; // reset retry after success
     } catch (err) {
       retryCount++;
-      console.error(\`Error fetching page \${page}: \${err.message}, retrying... (\${retryCount})\`);
-      if (retryCount >= maxRetries) {
-        console.error("Max retries reached. Exiting fetch.");
+      console.error(`Error fetching page ${page}: ${err.message}, retrying... (${retryCount})`);
+      if (retryCount >= MAX_RETRIES) {
+        console.error("Max retries reached. Stopping fetch.");
         break;
       }
       await new Promise(r => setTimeout(r, 1500));
@@ -78,36 +77,47 @@ function calculateAgeScore(age) {
   return 0;
 }
 
-// ----------------- PROCESS PATIENTS -----------------
+// ----------------- PROCESS PATIENTS (IMPROVED) -----------------
 function processPatients(patients) {
   const highRisk = [];
   const feverPatients = [];
-  const dataIssuesSet = new Set();
+  const dataIssues = [];
 
   patients.forEach(p => {
     const bpScore = calculateBPScore(p.blood_pressure);
     const tempScore = calculateTempScore(p.temperature);
     const ageScore = calculateAgeScore(p.age);
-    const totalScore = bpScore + tempScore + ageScore;
 
-    if (totalScore >= 4) highRisk.push(p.patient_id);
-    if (typeof p.temperature === "number" && p.temperature >= 99.6) feverPatients.push(p.patient_id);
+    // ✅ Fever detection
+    if (typeof p.temperature === "number" && p.temperature >= 99.6) {
+      feverPatients.push(p.patient_id);
+    }
 
-    if (bpScore === 0 && (!p.blood_pressure || !p.blood_pressure.includes("/"))) dataIssuesSet.add(p.patient_id);
-    if (tempScore === 0 && typeof p.temperature !== "number") dataIssuesSet.add(p.patient_id);
-    if (ageScore === 0 && typeof p.age !== "number") dataIssuesSet.add(p.patient_id);
+    // ✅ Improved high-risk logic
+    if (bpScore >= 4 || (bpScore >= 3 && tempScore >= 1)) {
+      highRisk.push(p.patient_id);
+    }
+
+    // ✅ Data quality checks
+    const invalidBP = !p.blood_pressure || !/^\d{2,3}\/\d{2,3}$/.test(p.blood_pressure);
+    const invalidAge = typeof p.age !== "number" || p.age < 0 || p.age > 120;
+    const invalidTemp = typeof p.temperature !== "number" || p.temperature < 90 || p.temperature > 110;
+
+    if (invalidBP || invalidAge || invalidTemp) {
+      dataIssues.push(p.patient_id);
+    }
   });
 
   return {
     high_risk_patients: highRisk,
     fever_patients: feverPatients,
-    data_quality_issues: Array.from(dataIssuesSet)
+    data_quality_issues: dataIssues
   };
 }
 
 // ----------------- SUBMIT RESULTS -----------------
 async function submitResults(results) {
-  const res = await fetch(\`\${BASE_URL}/submit-assessment\`, {
+  const res = await fetch(`${BASE_URL}/submit-assessment`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -124,7 +134,7 @@ async function submitResults(results) {
 (async () => {
   console.log("Fetching patients...");
   const patients = await fetchPatients();
-  console.log(\`Fetched \${patients.length} patients.\`);
+  console.log(`Fetched ${patients.length} patients.`);
 
   const results = processPatients(patients);
   console.log("Prepared Results:", results);
