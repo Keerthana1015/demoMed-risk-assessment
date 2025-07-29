@@ -2,13 +2,14 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 
 dotenv.config();
-import fetch from 'node-fetch';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const API_KEY = process.env.API_KEY;
 const BASE_URL = "https://assessment.ksensetech.com/api";
+
+if (!API_KEY) {
+  console.error(" API_KEY is missing. Add it to your .env file.");
+  process.exit(1);
+}
 
 // ----------------- FETCH PATIENT DATA -----------------
 async function fetchPatients() {
@@ -92,17 +93,17 @@ patients.forEach(p => {
     const tempScore = calculateTempScore(p.temperature);
     const ageScore = calculateAgeScore(p.age);
 
-    // ✅ Fever detection
+    // Fever detection
     if (typeof p.temperature === "number" && p.temperature >= 99.6) {
       feverPatients.push(p.patient_id);
     }
 
-    // ✅ Improved high-risk logic
+    // Improved high-risk logic
     if (bpScore >= 4 || (bpScore >= 3 && tempScore >= 1)) {
       highRisk.push(p.patient_id);
     }
 
-    // ✅ Data quality checks
+    // Data quality checks
     const invalidBP = !p.blood_pressure || !/^\d{2,3}\/\d{2,3}$/.test(p.blood_pressure);
     const invalidAge = typeof p.age !== "number" || p.age < 0 || p.age > 120;
     const invalidTemp = typeof p.temperature !== "number" || p.temperature < 90 || p.temperature > 110;

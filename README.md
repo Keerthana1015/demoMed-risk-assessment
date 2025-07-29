@@ -1,23 +1,17 @@
-# demoMed-risk-assessment
+# Healthcare Risk Assessment
 
-## Overview
-This project connects to the DemoMed Healthcare API to:
-- Fetch patient data (with pagination and error handling)
-- Calculate patient risk scores based on blood pressure, temperature, and age
-- Identify high-risk patients, fever patients, and data quality issues
-- Submit results back to the assessment API
+This project fetches patient data from an API, processes it to identify:
+- **High-risk patients** (risk_score ≥ 4)
+- **Fever patients** (temperature ≥ 99.6°F)
+- **Data quality issues** (missing/invalid data)
 
-## Features
-- Handles API rate limiting and intermittent failures with retry logic
-- Processes inconsistent or missing data gracefully
-- Implements all scoring rules as per assessment requirements
-- Outputs detailed submission response with scoring feedback
+It then **submits the results back to the assessment API** for scoring.
 
-## Setup
-1. Clone the repo
-2. Run `npm install`
-3. Create a `.env` file in the root folder and add:
-   API_KEY=your_api_key_here
-4. Run the script:
-   node index.js
+---
 
+## ✅ Setup Instructions
+
+### 1. Clone the Repo
+```bash
+git clone https://github.com/Keerthana1015/demoMed-risk-assessment.git
+cd demoMed-risk-assessment
